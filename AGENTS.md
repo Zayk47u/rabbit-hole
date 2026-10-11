@@ -27,3 +27,10 @@ Implement the initial Expo app with a working vertical discovery feed, branch na
 
 ## Completion report
 Report files changed, commands actually executed, tests that passed or failed, and remaining blockers. Do not claim iPhone testing without an iPhone build.
+
+## Cursor Cloud specific instructions
+The default branch is product documentation only. `README.md` states the Expo app is not implemented. There is no `package.json`, dev server, linter, or test script until the M1 vertical slice in `docs/ROADMAP.md` lands on the default branch.
+
+- Cloud Agent `install` checks that Node.js is at least 22.13 (the current Expo SDK 57 minimum) and runs `npm ci` only when `package-lock.json` is present. There is no `start` command, because nothing has to stay running.
+- Node.js 22 and npm come from the default image. Chrome for a future Expo web check is `google-chrome` (`/usr/local/bin/google-chrome`). This Linux environment cannot produce an iPhone build.
+- Keep the demo offline. Supabase, service-role keys, and `.env` files are out of scope until the owner authorizes backend work.
