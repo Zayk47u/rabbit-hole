@@ -27,3 +27,10 @@ Implement the initial Expo app with a working vertical discovery feed, branch na
 
 ## Completion report
 Report files changed, commands actually executed, tests that passed or failed, and remaining blockers. Do not claim iPhone testing without an iPhone build.
+
+## Cursor Cloud specific instructions
+- Install: `npm ci` (requires `package-lock.json` and Node.js ≥ 22.13 for Expo SDK 57).
+- Checks: `npm run check` (typecheck + lint + test). Web smoke: `npm run web`.
+- Chrome for Expo web is available as `google-chrome` (`/usr/local/bin/google-chrome`).
+- This Linux environment cannot produce an iPhone build; do not claim device testing without one.
+- Keep the demo offline. Supabase, service-role keys, and `.env` files are out of scope until the owner authorizes backend work.

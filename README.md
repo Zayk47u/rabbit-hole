@@ -4,22 +4,47 @@
 
 > Discover → React → Explore → Branch → Discover again.
 
-**Status:** Product and engineering setup complete; the app has **not yet been implemented, built, deployed, or published**.
+**Status:** M1 offline Expo vertical slice implemented on `feat/expo-mvp`. Demo content only — not a public production launch. No iPhone device build has been run in this environment.
 
 ## The product
-RABBIT HOLE offers a swipeable discovery feed that opens into meaningful, explorable relationships between ideas. Recommendations should learn from users' interests and exploration choices while balancing novelty, quality, and diversity.
+RABBIT HOLE offers a swipeable discovery feed that opens into meaningful, explorable relationships between ideas. Recommendations use deterministic, explainable scoring (not a trained model).
 
-## Proposed stack
-- Expo + React Native + TypeScript + Expo Router
+## Stack (this milestone)
+- Expo SDK 57 + React Native + TypeScript (strict) + Expo Router
 - React Native Gesture Handler + Reanimated
-- Supabase Auth + PostgreSQL + Row Level Security (after the demo milestone)
-- Deterministic recommendation baseline, with more advanced models only after evaluation
+- AsyncStorage for local bookmarks and topic preferences
+- Jest unit tests for ranking, graph, navigation, and bookmarks
+- Supabase deferred until owner-authorized backend work
 
-## Start building
-1. Read [the product specification](docs/PRODUCT.md), [architecture](docs/ARCHITECTURE.md), and [roadmap](docs/ROADMAP.md).
-2. Coding agents must follow [AGENTS.md](AGENTS.md).
-3. Implement the first runnable vertical slice on a feature branch and open a PR.
-4. Do not commit secrets or private user data. The repository is currently **public**.
+## Run the demo
+Requires Node.js 22.13+ (Expo SDK 57 floor).
+
+```bash
+npm ci
+npm start
+```
+
+Then press `w` for web, or scan the QR code with Expo Go on a device. iOS Simulator requires macOS.
+
+Useful scripts:
+
+```bash
+npm run web        # Expo web
+npm test           # Jest unit tests
+npm run typecheck  # TypeScript
+npm run lint       # ESLint
+npm run check      # typecheck + lint + test
+```
+
+No `.env` or Supabase credentials are required for the offline demo.
+
+## What works offline
+- Vertical discovery feed with Skip/Next button alternatives and reduced-motion-aware paging
+- 16 explicitly labeled demo discoveries with placeholder media (no external image rights)
+- Typed branch exploration with path history, loop labels, and dead-end handling
+- Local save/unsave + Saved tab (persists via AsyncStorage)
+- Topic preference controls that reshuffle deterministic ranking
+- Session reset and preference reset
 
 ## Documents
 - [Product requirements](docs/PRODUCT.md)
@@ -27,8 +52,12 @@ RABBIT HOLE offers a swipeable discovery feed that opens into meaningful, explor
 - [Database design](docs/DATABASE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Decision log](docs/DECISIONS.md)
+- [Agent instructions](AGENTS.md)
 
-## Immediate milestone
-A runnable Expo app with a smooth, accessible discovery feed; 12–20 clearly labeled demonstration cards; typed exploration branches; local bookmarks; and testable deterministic recommendations. No paid service or credentials should be required to run the demo.
+## Not done yet
+- Supabase auth, RLS, and synced bookmarks
+- Reviewed production content and real citations
+- Actual iPhone development build / TestFlight
+- App Store / privacy policy packaging
 
 This project is in development; do not treat sample content or unreviewed generated text as published factual material.

@@ -4,16 +4,16 @@
 - [x] Repository created by owner.
 - [x] Initial product/architecture/agent documentation.
 - [ ] Confirm repository visibility is intentional (currently public).
-- [ ] Create feature branch for app implementation.
+- [x] Create feature branch for app implementation (`feat/expo-mvp`).
 
 ## M1 — Working Expo vertical slice
-- [ ] Initialize Expo Router TypeScript app using mutually compatible current dependencies.
-- [ ] Build single-column, accessible, swipeable discovery feed.
-- [ ] Add 12–20 explicitly demo-labeled discoveries with safe placeholder media.
-- [ ] Add typed discovery-to-discovery branches and exploration backtracking.
-- [ ] Add local save/unsave and saved screen.
-- [ ] Add deterministic recommendation module, cold-start diversity and deduplication.
-- [ ] Test ranking, navigation, bookmarks, reduced motion, and error states.
+- [x] Initialize Expo Router TypeScript app using mutually compatible current dependencies.
+- [x] Build single-column, accessible, swipeable discovery feed.
+- [x] Add 12–20 explicitly demo-labeled discoveries with safe placeholder media.
+- [x] Add typed discovery-to-discovery branches and exploration backtracking.
+- [x] Add local save/unsave and saved screen.
+- [x] Add deterministic recommendation module, cold-start diversity and deduplication.
+- [x] Test ranking, navigation, bookmarks, reduced motion, and error states.
 - [ ] Run lint, typecheck, tests and report results.
 - [ ] Open implementation PR.
 
