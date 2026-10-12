@@ -4,7 +4,7 @@
 
 > Discover → React → Explore → Branch → Discover again.
 
-**Status:** M1 offline Expo vertical slice implemented on `feat/expo-mvp`. Demo content only — not a public production launch. No iPhone device build has been run in this environment.
+**Status:** M1 Expo vertical slice on `feat/expo-mvp`, redesigned as a one-card curiosity engine (dark identity, obsession clusters, teaser-first branching). Demo content only — not a public production launch.
 
 ## The product
 RABBIT HOLE offers a swipeable discovery feed that opens into meaningful, explorable relationships between ideas. Recommendations use deterministic, explainable scoring (not a trained model).
