@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DemoBanner } from '@/src/components/DemoBanner';
 import { EmptyState } from '@/src/components/EmptyState';
@@ -9,13 +10,14 @@ import { palette, spacing } from '@/src/lib/theme';
 
 export default function SavedScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { ready, savedDiscoveries, toggleSave, clearAllBookmarks } = useAppState();
 
   if (!ready) return <LoadingState label="Loading saved discoveries…" />;
 
   if (savedDiscoveries.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <DemoBanner />
         <EmptyState
           title="Nothing saved yet"
@@ -28,7 +30,10 @@ export default function SavedScreen() {
   return (
     <View style={styles.container}>
       <DemoBanner />
-      <ScrollView contentContainerStyle={styles.list}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.list, { paddingBottom: spacing.xl + insets.bottom }]}
+      >
         <Pressable
           onPress={() => {
             void clearAllBookmarks();
@@ -72,7 +77,8 @@ export default function SavedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: palette.paper },
-  list: { padding: spacing.md, gap: spacing.md },
+  scroll: { flex: 1 },
+  list: { padding: spacing.md, gap: spacing.md, flexGrow: 1 },
   clearBtn: {
     alignSelf: 'flex-end',
     paddingVertical: spacing.sm,
