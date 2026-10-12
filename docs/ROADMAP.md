@@ -4,18 +4,26 @@
 - [x] Repository created by owner.
 - [x] Initial product/architecture/agent documentation.
 - [ ] Confirm repository visibility is intentional (currently public).
-- [ ] Create feature branch for app implementation.
+- [x] Create feature branch for app implementation (`feat/expo-mvp`).
 
 ## M1 — Working Expo vertical slice
-- [ ] Initialize Expo Router TypeScript app using mutually compatible current dependencies.
-- [ ] Build single-column, accessible, swipeable discovery feed.
-- [ ] Add 12–20 explicitly demo-labeled discoveries with safe placeholder media.
-- [ ] Add typed discovery-to-discovery branches and exploration backtracking.
-- [ ] Add local save/unsave and saved screen.
-- [ ] Add deterministic recommendation module, cold-start diversity and deduplication.
-- [ ] Test ranking, navigation, bookmarks, reduced motion, and error states.
-- [ ] Run lint, typecheck, tests and report results.
-- [ ] Open implementation PR.
+- [x] Initialize Expo Router TypeScript app using mutually compatible current dependencies.
+- [x] Build single-column, accessible, swipeable discovery feed.
+- [x] Add 12–20 explicitly demo-labeled discoveries with safe placeholder media.
+- [x] Add typed discovery-to-discovery branches and exploration backtracking.
+- [x] Add local save/unsave and saved screen.
+- [x] Add deterministic recommendation module, cold-start diversity and deduplication.
+- [x] Test ranking, navigation, bookmarks, reduced motion, and error states.
+- [x] Run lint, typecheck, tests and report results (`npm run check`: 15 tests passed).
+- [x] Open implementation PR (#5).
+
+## M1.5 — Adaptive local personalization (in progress on `feat/expo-mvp`)
+- [x] Expand demo catalog to 60 discoveries with dense branch graph (still DEMO / UNVERIFIED).
+- [x] Local evolving interest + connection-style profile from Skip/Save/Dive/Branch.
+- [x] Configurable exploration mix (~70% exploit / 20% adjacent / 10% wildcard).
+- [x] Session-adaptive next-card picking + AsyncStorage persistence + Reset personalization.
+- [x] DEV ranking debug screen (`/debug/ranking`).
+- [x] Automated tests for profile updates, exploration, persistence, determinism.
 
 ## M2 — Content and backend
 - [ ] Create Supabase project after explicit authorization/credentials setup.
