@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { palette, spacing } from '@/src/lib/theme';
+import { palette, radii, spacing } from '@/src/lib/theme';
 
 type Props = {
   message: string;
@@ -10,7 +10,7 @@ type Props = {
 export function ErrorState({ message, onRetry }: Props) {
   return (
     <View style={styles.wrap} accessibilityRole="alert">
-      <Text style={styles.title}>Something went wrong</Text>
+      <Text style={styles.title}>Something glitched</Text>
       <Text style={styles.message}>{message}</Text>
       {onRetry ? (
         <Pressable
@@ -33,26 +33,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xl,
     gap: spacing.md,
+    backgroundColor: palette.bg,
   },
   title: {
     fontSize: 20,
-    fontWeight: '700',
-    color: palette.danger,
+    fontWeight: '800',
+    color: palette.accent,
   },
   message: {
     fontSize: 15,
-    color: palette.inkMuted,
+    color: palette.textMuted,
     textAlign: 'center',
   },
   button: {
     backgroundColor: palette.accent,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
-    borderRadius: 8,
+    borderRadius: radii.sm,
   },
   pressed: { opacity: 0.85 },
   buttonText: {
     color: palette.white,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

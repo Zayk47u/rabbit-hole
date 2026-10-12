@@ -1,19 +1,20 @@
 import { DEMO_DISCOVERIES } from '../src/data/demo/discoveries';
 import { DEMO_CONNECTIONS } from '../src/data/demo/connections';
 import {
+  applyInteractionSignal,
   buildColdStartFeed,
   rankDiscoveries,
   scoreDiscovery,
 } from '../src/recommendations';
 import type { RankingContext, UserPreferences } from '../src/domain/types';
 
-const neutral: UserPreferences = { topicWeights: {} };
+const neutral: UserPreferences = { interestWeights: {}, selectedInterestIds: [] };
 
 function baseContext(overrides: Partial<RankingContext> = {}): RankingContext {
   return {
     preferences: neutral,
     seenDiscoveryIds: new Set(),
-    recentTopicIds: [],
+    recentInterestIds: [],
     ...overrides,
   };
 }
@@ -22,7 +23,10 @@ describe('deterministic recommendation scoring', () => {
   it('is deterministic for the same inputs', () => {
     const discovery = DEMO_DISCOVERIES[0]!;
     const ctx = baseContext({
-      preferences: { topicWeights: { biology: 0.9, mathematics: 0.8 } },
+      preferences: {
+        selectedInterestIds: ['hidden_history'],
+        interestWeights: { hidden_history: 0.9, strange_science: 0.8 },
+      },
     });
     const a = scoreDiscovery(discovery, ctx);
     const b = scoreDiscovery(discovery, ctx);
@@ -32,26 +36,30 @@ describe('deterministic recommendation scoring', () => {
 
   it('suppresses already-seen discoveries from ranked results', () => {
     const seenId = DEMO_DISCOVERIES[0]!.id;
-    const ranked = rankDiscoveries(DEMO_DISCOVERIES, baseContext({
-      seenDiscoveryIds: new Set([seenId]),
-    }));
+    const ranked = rankDiscoveries(
+      DEMO_DISCOVERIES,
+      baseContext({ seenDiscoveryIds: new Set([seenId]) }),
+    );
     expect(ranked.every((r) => r.discovery.id !== seenId)).toBe(true);
   });
 
-  it('boosts preferred topics over disliked topics', () => {
-    const biologyHeavy = DEMO_DISCOVERIES.find((d) =>
-      d.topics.some((t) => t.topicId === 'biology' && t.weight >= 0.9),
+  it('boosts preferred curiosity clusters over disliked ones', () => {
+    const internetHeavy = DEMO_DISCOVERIES.find((d) =>
+      d.interests.some((t) => t.interestId === 'internet_mysteries' && t.weight >= 0.9),
     )!;
-    const astronomyHeavy = DEMO_DISCOVERIES.find((d) =>
-      d.topics.some((t) => t.topicId === 'astronomy' && t.weight >= 0.9),
+    const fashionHeavy = DEMO_DISCOVERIES.find((d) =>
+      d.interests.some((t) => t.interestId === 'fashion_lore' && t.weight >= 0.9),
     )!;
 
-    const preferBio = baseContext({
-      preferences: { topicWeights: { biology: 1, astronomy: 0.1 } },
+    const preferNet = baseContext({
+      preferences: {
+        selectedInterestIds: ['internet_mysteries'],
+        interestWeights: { internet_mysteries: 1, fashion_lore: 0.1 },
+      },
     });
-    const bioScore = scoreDiscovery(biologyHeavy, preferBio).score;
-    const astroScore = scoreDiscovery(astronomyHeavy, preferBio).score;
-    expect(bioScore).toBeGreaterThan(astroScore);
+    expect(scoreDiscovery(internetHeavy, preferNet).score).toBeGreaterThan(
+      scoreDiscovery(fashionHeavy, preferNet).score,
+    );
   });
 
   it('builds a cold-start feed without duplicates', () => {
@@ -63,7 +71,10 @@ describe('deterministic recommendation scoring', () => {
 
   it('ranks the same candidate list stably across calls', () => {
     const ctx = baseContext({
-      preferences: { topicWeights: { design: 0.9, psychology: 0.8 } },
+      preferences: {
+        selectedInterestIds: ['cults_belief'],
+        interestWeights: { cults_belief: 0.9, power_manipulation: 0.8 },
+      },
     });
     const first = rankDiscoveries(DEMO_DISCOVERIES, ctx).map((r) => r.discovery.id);
     const second = rankDiscoveries(DEMO_DISCOVERIES, ctx).map((r) => r.discovery.id);
@@ -84,6 +95,28 @@ describe('deterministic recommendation scoring', () => {
     });
     expect(scoreDiscovery(target, ctx).factors.connectionRelevance).toBeGreaterThan(
       scoreDiscovery(unrelated, ctx).factors.connectionRelevance,
+    );
+  });
+
+  it('applies skip as a mild negative signal and save as a strong positive', () => {
+    const discovery = DEMO_DISCOVERIES.find((d) =>
+      d.interests.some((i) => i.interestId === 'internet_mysteries'),
+    )!;
+    const afterSkip = applyInteractionSignal(neutral, discovery, 'skip');
+    const afterSave = applyInteractionSignal(neutral, discovery, 'save');
+    const interest = discovery.interests[0]!.interestId;
+    expect(afterSave.interestWeights[interest]!).toBeGreaterThan(
+      afterSkip.interestWeights[interest]!,
+    );
+  });
+
+  it('treats dive as a stronger positive than save', () => {
+    const discovery = DEMO_DISCOVERIES[2]!;
+    const interest = discovery.interests[0]!.interestId;
+    const afterSave = applyInteractionSignal(neutral, discovery, 'save');
+    const afterDive = applyInteractionSignal(neutral, discovery, 'dive');
+    expect(afterDive.interestWeights[interest]!).toBeGreaterThan(
+      afterSave.interestWeights[interest]!,
     );
   });
 });

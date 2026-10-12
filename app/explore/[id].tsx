@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DemoBanner } from '@/src/components/DemoBanner';
 import { EmptyState } from '@/src/components/EmptyState';
+import { InterestChips } from '@/src/components/InterestChips';
 import { PlaceholderMedia } from '@/src/components/PlaceholderMedia';
 import {
   getConnectionsFrom,
@@ -22,20 +23,34 @@ import {
   type ExplorationHistory,
 } from '@/src/features/explore/navigationHistory';
 import { rankBranchTargets } from '@/src/recommendations';
-import { palette, spacing } from '@/src/lib/theme';
+import { palette, radii, spacing } from '@/src/lib/theme';
 
 export default function ExploreScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, focus } = useLocalSearchParams<{ id: string; focus?: string }>();
   const router = useRouter();
-  const { preferences, session, isSaved, toggleSave, recordView } = useAppState();
+  const { preferences, session, isSaved, toggleSave, reactToCard } = useAppState();
 
   const startId = typeof id === 'string' ? id : id?.[0];
-  const [history, setHistory] = useState<ExplorationHistory>(() =>
-    createHistory(startId ?? ''),
-  );
+  const scrollRef = useRef<ScrollView>(null);
+  const routeSeed = startId ?? '';
+  const [history, setHistory] = useState<ExplorationHistory>(() => createHistory(routeSeed));
+  const [historySeed, setHistorySeed] = useState(routeSeed);
+
+  if (historySeed !== routeSeed) {
+    setHistorySeed(routeSeed);
+    setHistory(createHistory(routeSeed));
+  }
 
   const discoveryId = currentDiscoveryId(history) ?? startId;
   const discovery = discoveryId ? getDiscoveryById(discoveryId) : undefined;
+
+  useEffect(() => {
+    if (focus === 'branches') {
+      const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 160);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [focus, discoveryId]);
 
   const options: BranchOption[] = useMemo(() => {
     if (!discovery) return [];
@@ -45,8 +60,13 @@ export default function ExploreScreen() {
         const target = getDiscoveryById(connection.toDiscoveryId);
         return target ? { connection, discovery: target } : null;
       })
-      .filter((x): x is { connection: (typeof connections)[number]; discovery: NonNullable<ReturnType<typeof getDiscoveryById>> } =>
-        Boolean(x),
+      .filter(
+        (
+          x,
+        ): x is {
+          connection: (typeof connections)[number];
+          discovery: NonNullable<ReturnType<typeof getDiscoveryById>>;
+        } => Boolean(x),
       );
 
     const ranked = rankBranchTargets(
@@ -54,7 +74,7 @@ export default function ExploreScreen() {
       {
         preferences,
         seenDiscoveryIds: new Set(session.seenDiscoveryIds),
-        recentTopicIds: session.recentTopicIds,
+        recentInterestIds: session.recentInterestIds,
         focusDiscoveryId: discovery.id,
         outgoingConnections: connections,
       },
@@ -70,29 +90,36 @@ export default function ExploreScreen() {
         isLoop: wouldCreateImmediateLoop(historyIds(history), scored.discovery.id),
       };
     });
-  }, [discovery, history, preferences, session.recentTopicIds, session.seenDiscoveryIds]);
+  }, [discovery, history, preferences, session.recentInterestIds, session.seenDiscoveryIds]);
 
   if (!startId || !discovery) {
     return (
       <EmptyState
-        title="Discovery not found"
-        message="This demo id is missing from the sample catalog."
+        title="This hole collapsed"
+        message="That demo id is missing from the sample catalog."
       />
     );
   }
 
   return (
     <View style={styles.container}>
-      <DemoBanner />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
+        <DemoBanner />
         <Text style={styles.path}>
-          Path depth {history.steps.length}
-          {history.steps.length > 1 ? ` · from ${history.steps[0]?.discoveryId}` : ''}
+          Depth {history.steps.length}
+          {history.steps.length > 1 ? ' · still falling' : ' · entry point'}
         </Text>
-        <PlaceholderMedia color={discovery.accentColor} title={discovery.title} />
+        <PlaceholderMedia
+          color={discovery.accentColor}
+          title={discovery.title}
+          motif={discovery.visualMotif}
+        />
+        <InterestChips interestIds={discovery.interests.map((i) => i.interestId)} />
         <Text style={styles.title}>{discovery.title}</Text>
         <Text style={styles.hook}>{discovery.hook}</Text>
-        <Text style={styles.body}>{discovery.body}</Text>
+        <Text style={styles.body}>{discovery.deepDive}</Text>
+        <Text style={styles.whyLabel}>Why it matters</Text>
+        <Text style={styles.why}>{discovery.whyItMatters}</Text>
 
         <View style={styles.row}>
           <Pressable
@@ -121,11 +148,12 @@ export default function ExploreScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.section}>Branches</Text>
+        <Text style={styles.section}>Where could this go?</Text>
+        <Text style={styles.sectionSub}>Pick the temptation you can’t ignore.</Text>
         <BranchList
           options={options}
           onSelect={(option) => {
-            recordView(option.discovery.id);
+            void reactToCard(option.discovery.id, 'branch');
             setHistory((h) => pushStep(h, option.discovery.id, option.connection.id));
           }}
         />
@@ -136,7 +164,7 @@ export default function ExploreScreen() {
           accessibilityLabel="Close explore screen"
           style={({ pressed }) => [styles.close, pressed && styles.pressed]}
         >
-          <Text style={styles.closeText}>Close explore</Text>
+          <Text style={styles.closeText}>Return to Discover</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -144,39 +172,55 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: palette.paper },
-  content: { padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xl },
-  path: { color: palette.inkMuted, fontSize: 12, fontWeight: '600' },
-  title: { fontSize: 26, fontWeight: '800', color: palette.ink, marginTop: spacing.sm },
-  hook: { fontSize: 16, fontWeight: '600', color: palette.ink, lineHeight: 23 },
-  body: { fontSize: 15, color: palette.inkMuted, lineHeight: 22 },
+  container: { flex: 1, backgroundColor: palette.bg },
+  content: { padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.xxl },
+  path: { color: palette.textDim, fontSize: 12, fontWeight: '700', letterSpacing: 0.4 },
+  title: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: palette.text,
+    marginTop: spacing.xs,
+    letterSpacing: -0.4,
+  },
+  hook: { fontSize: 16, fontWeight: '700', color: palette.text, lineHeight: 23 },
+  body: { fontSize: 15, color: palette.textMuted, lineHeight: 22 },
+  whyLabel: {
+    color: palette.accent,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginTop: spacing.sm,
+  },
+  why: { color: palette.textMuted, lineHeight: 20 },
   row: { flexDirection: 'row', gap: spacing.sm, marginVertical: spacing.sm },
   secondary: {
     flex: 1,
     minHeight: 44,
-    borderRadius: 10,
+    borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: palette.inkMuted,
+    borderColor: palette.border,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: palette.surface,
   },
-  secondaryText: { fontWeight: '700', color: palette.ink },
-  disabled: { opacity: 0.4 },
+  secondaryText: { fontWeight: '800', color: palette.text },
+  disabled: { opacity: 0.35 },
   section: {
     marginTop: spacing.md,
-    marginBottom: spacing.xs,
-    fontSize: 18,
-    fontWeight: '800',
-    color: palette.ink,
+    fontSize: 20,
+    fontWeight: '900',
+    color: palette.text,
   },
+  sectionSub: { color: palette.textMuted, marginBottom: spacing.xs },
   close: {
     marginTop: spacing.lg,
     minHeight: 48,
-    borderRadius: 10,
+    borderRadius: radii.sm,
     backgroundColor: palette.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeText: { color: palette.white, fontWeight: '800' },
-  pressed: { opacity: 0.85 },
+  closeText: { color: palette.white, fontWeight: '900' },
+  pressed: { opacity: 0.88 },
 });

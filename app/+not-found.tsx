@@ -6,11 +6,11 @@ import { palette, spacing } from '@/src/lib/theme';
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Not found' }} />
+      <Stack.Screen options={{ title: 'Lost' }} />
       <View style={styles.container}>
-        <Text style={styles.title}>This screen does not exist.</Text>
+        <Text style={styles.title}>This corridor does not exist.</Text>
         <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Go to Discover</Text>
+          <Text style={styles.linkText}>Back to Discover</Text>
         </Link>
       </View>
     </>
@@ -23,12 +23,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
-    backgroundColor: palette.paper,
+    backgroundColor: palette.bg,
   },
   title: {
     fontSize: 20,
-    fontWeight: '700',
-    color: palette.ink,
+    fontWeight: '800',
+    color: palette.text,
   },
   link: {
     marginTop: spacing.md,
@@ -37,6 +37,6 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     color: palette.accent,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

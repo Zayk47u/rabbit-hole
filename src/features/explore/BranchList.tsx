@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { Discovery, DiscoveryConnection } from '@/src/domain/types';
-import { RELATION_LABELS } from '@/src/domain/types';
-import { palette, spacing } from '@/src/lib/theme';
+import { BRANCH_LABELS } from '@/src/domain/types';
+import { palette, radii, spacing } from '@/src/lib/theme';
 
 export type BranchOption = {
   connection: DiscoveryConnection;
@@ -20,9 +20,9 @@ export function BranchList({ options, onSelect }: Props) {
   if (options.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>Dead end</Text>
+        <Text style={styles.emptyTitle}>Dead end — for now</Text>
         <Text style={styles.emptyBody}>
-          No further demo branches from here. Use Back to return along your path.
+          No further demo branches from here. Backtrack and pick another temptation.
         </Text>
       </View>
     );
@@ -35,13 +35,15 @@ export function BranchList({ options, onSelect }: Props) {
           key={option.connection.id}
           onPress={() => onSelect(option)}
           accessibilityRole="button"
-          accessibilityLabel={`${RELATION_LABELS[option.connection.relationType]}: ${option.discovery.title}${option.isLoop ? ', already visited' : ''}`}
+          accessibilityLabel={`${BRANCH_LABELS[option.connection.branchType]}: ${option.connection.teaser}`}
           style={({ pressed }) => [styles.item, pressed && styles.pressed]}
         >
-          <Text style={styles.relation}>{RELATION_LABELS[option.connection.relationType]}</Text>
+          <Text style={styles.relation}>{BRANCH_LABELS[option.connection.branchType]}</Text>
+          <Text style={styles.teaser}>{option.connection.teaser}</Text>
           <Text style={styles.title}>{option.discovery.title}</Text>
-          <Text style={styles.explanation}>{option.connection.explanation}</Text>
-          {option.isLoop ? <Text style={styles.loop}>Already on your path — opens as a loop</Text> : null}
+          {option.isLoop ? (
+            <Text style={styles.loop}>Already on your path — opens as a loop</Text>
+          ) : null}
         </Pressable>
       ))}
     </View>
@@ -51,50 +53,53 @@ export function BranchList({ options, onSelect }: Props) {
 const styles = StyleSheet.create({
   list: { gap: spacing.sm },
   item: {
-    backgroundColor: palette.white,
-    borderRadius: 12,
+    backgroundColor: palette.surface,
+    borderRadius: radii.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: palette.paperDeep,
-    gap: 4,
+    borderColor: palette.border,
+    gap: 6,
   },
-  pressed: { opacity: 0.9 },
+  pressed: { opacity: 0.9, borderColor: palette.accentAlt },
   relation: {
     color: palette.accent,
-    fontWeight: '800',
-    fontSize: 12,
+    fontWeight: '900',
+    fontSize: 11,
+    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+  },
+  teaser: {
+    color: palette.text,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 22,
   },
   title: {
-    color: palette.ink,
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  explanation: {
-    color: palette.inkMuted,
-    fontSize: 14,
-    lineHeight: 20,
+    color: palette.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
   },
   loop: {
-    marginTop: 4,
+    marginTop: 2,
     color: palette.demo,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   empty: {
     padding: spacing.md,
-    backgroundColor: palette.paperDeep,
-    borderRadius: 12,
+    backgroundColor: palette.surfaceSoft,
+    borderRadius: radii.md,
     gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: palette.border,
   },
   emptyTitle: {
-    fontWeight: '800',
-    color: palette.ink,
+    fontWeight: '900',
+    color: palette.text,
     fontSize: 16,
   },
   emptyBody: {
-    color: palette.inkMuted,
+    color: palette.textMuted,
     lineHeight: 20,
   },
 });

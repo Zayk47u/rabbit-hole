@@ -1,52 +1,60 @@
+import { LinearGradientish } from '@/src/components/LinearGradientish';
+import { palette, radii, spacing } from '@/src/lib/theme';
 import { StyleSheet, Text, View } from 'react-native';
-
-import { palette, spacing } from '@/src/lib/theme';
 
 type Props = {
   color: string;
   title: string;
+  motif: string;
+  compact?: boolean;
 };
 
-/** Safe local placeholder — no external image rights required. */
-export function PlaceholderMedia({ color, title }: Props) {
-  const initials = title
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
-
+export function PlaceholderMedia({ color, title, motif, compact }: Props) {
   return (
     <View
-      style={[styles.media, { backgroundColor: color }]}
+      style={[styles.wrap, compact && styles.compact, { borderColor: color + '55' }]}
       accessibilityRole="image"
-      accessibilityLabel={`Placeholder illustration for ${title}`}
+      accessibilityLabel={`Visual for ${title}`}
     >
-      <Text style={styles.initials}>{initials}</Text>
-      <Text style={styles.caption}>Placeholder media</Text>
+      <LinearGradientish
+        colors={['#0B0C0F', color + 'CC', color]}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.veil} />
+      <Text style={styles.motif}>{motif}</Text>
+      <Text style={styles.caption}>Atmospheric placeholder</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  media: {
+  wrap: {
     width: '100%',
-    aspectRatio: 16 / 10,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    aspectRatio: 16 / 11,
+    borderRadius: radii.lg,
     overflow: 'hidden',
+    borderWidth: 1,
+    justifyContent: 'flex-end',
+    padding: spacing.md,
   },
-  initials: {
+  compact: {
+    aspectRatio: 16 / 9,
+    borderRadius: radii.md,
+  },
+  veil: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.18)',
+  },
+  motif: {
     color: palette.white,
-    fontSize: 42,
-    fontWeight: '800',
-    opacity: 0.9,
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: 1.4,
   },
   caption: {
-    marginTop: spacing.sm,
-    color: palette.white,
-    fontSize: 12,
+    marginTop: 4,
+    color: 'rgba(243,240,232,0.72)',
+    fontSize: 11,
     fontWeight: '600',
-    opacity: 0.85,
   },
 });

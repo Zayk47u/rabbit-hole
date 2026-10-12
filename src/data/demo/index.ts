@@ -1,13 +1,17 @@
-import type { Discovery, DiscoveryConnection, TopicId } from '@/src/domain/types';
+import type { Discovery, DiscoveryConnection, InterestId } from '@/src/domain/types';
 
 import { DEMO_CONNECTIONS } from './connections';
 import { DEMO_DISCOVERIES } from './discoveries';
-import { DEMO_TOPICS } from './topics';
+import { DEMO_INTERESTS, DEMO_TOPICS } from './topics';
 
-export { DEMO_CONNECTIONS, DEMO_DISCOVERIES, DEMO_TOPICS };
+export { DEMO_CONNECTIONS, DEMO_DISCOVERIES, DEMO_INTERESTS, DEMO_TOPICS };
 
 export function getDiscoveryById(id: string): Discovery | undefined {
   return DEMO_DISCOVERIES.find((d) => d.id === id);
+}
+
+export function getInterestById(id: InterestId) {
+  return DEMO_INTERESTS.find((i) => i.id === id);
 }
 
 export function getConnectionsFrom(discoveryId: string): DiscoveryConnection[] {
@@ -18,11 +22,15 @@ export function getConnectionsTo(discoveryId: string): DiscoveryConnection[] {
   return DEMO_CONNECTIONS.filter((c) => c.toDiscoveryId === discoveryId);
 }
 
-export function listTopicIdsForDiscovery(discovery: Discovery): TopicId[] {
-  return discovery.topics.map((t) => t.topicId);
+export function listInterestIdsForDiscovery(discovery: Discovery): InterestId[] {
+  return discovery.interests.map((t) => t.interestId);
 }
 
-/** Detects whether following connections can return to a prior node (loop). */
+/** @deprecated Use listInterestIdsForDiscovery */
+export function listTopicIdsForDiscovery(discovery: Discovery): InterestId[] {
+  return listInterestIdsForDiscovery(discovery);
+}
+
 export function wouldCreateImmediateLoop(
   historyIds: readonly string[],
   nextDiscoveryId: string,

@@ -1,18 +1,24 @@
-import type { TopicId, UserPreferences } from '@/src/domain/types';
+import type { InterestId, UserPreferences } from '@/src/domain/types';
 import { removeKey, readJson, writeJson } from '@/src/lib/storage';
 
-const PREFS_KEY = 'rabbit-hole/preferences/v1';
+const PREFS_KEY = 'rabbit-hole/preferences/v2';
 
 export const NEUTRAL_PREFERENCES: UserPreferences = {
-  topicWeights: {},
+  interestWeights: {},
+  selectedInterestIds: [],
 };
 
 export async function loadPreferences(): Promise<UserPreferences> {
   const prefs = await readJson<UserPreferences>(PREFS_KEY);
-  if (!prefs || typeof prefs !== 'object' || !prefs.topicWeights) {
+  if (!prefs || typeof prefs !== 'object') {
     return NEUTRAL_PREFERENCES;
   }
-  return { topicWeights: { ...prefs.topicWeights } };
+  return {
+    interestWeights: { ...(prefs.interestWeights ?? {}) },
+    selectedInterestIds: Array.isArray(prefs.selectedInterestIds)
+      ? (prefs.selectedInterestIds.filter(Boolean) as InterestId[])
+      : [],
+  };
 }
 
 export async function savePreferences(prefs: UserPreferences): Promise<void> {
@@ -21,18 +27,4 @@ export async function savePreferences(prefs: UserPreferences): Promise<void> {
 
 export async function resetPreferences(): Promise<void> {
   await removeKey(PREFS_KEY);
-}
-
-export function setTopicWeight(
-  prefs: UserPreferences,
-  topicId: TopicId,
-  weight: number,
-): UserPreferences {
-  const clamped = Math.min(1, Math.max(0, weight));
-  return {
-    topicWeights: {
-      ...prefs.topicWeights,
-      [topicId]: clamped,
-    },
-  };
 }

@@ -2,15 +2,10 @@ import type { Discovery, RankingContext, ScoredDiscovery } from '@/src/domain/ty
 
 import { scoreDiscovery } from './score';
 
-/** Stable string compare for deterministic tie-breaking. */
 function compareId(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-/**
- * Rank candidates with deterministic scoring.
- * Already-seen items are excluded (repeat suppression) unless includeSeen is true.
- */
 export function rankDiscoveries(
   candidates: readonly Discovery[],
   context: RankingContext,
@@ -34,26 +29,27 @@ export function rankDiscoveries(
 }
 
 /**
- * Cold-start feed: diversify by preferring underrepresented topics early,
- * while still using the deterministic scorer.
+ * Build a one-at-a-time queue with cold-start diversity and exploration.
+ * Intentionally mixes preferred clusters with adjacent surprises.
  */
 export function buildColdStartFeed(
   candidates: readonly Discovery[],
   context: RankingContext,
-  limit = 12,
+  limit = 20,
 ): Discovery[] {
   const remaining = new Map(candidates.map((d) => [d.id, d]));
   const selected: Discovery[] = [];
-  const localRecent: (typeof candidates)[number]['topics'][number]['topicId'][] = [
-    ...context.recentTopicIds,
-  ];
+  const localRecent = [...context.recentInterestIds];
   const seen = new Set(context.seenDiscoveryIds);
 
   while (selected.length < limit && remaining.size > 0) {
+    // Every 4th pick, nudge exploration so the queue isn't an echo chamber.
+    const explorationBoost = selected.length > 0 && selected.length % 4 === 3 ? 0.14 : 0.06;
     const ranked = rankDiscoveries([...remaining.values()], {
       ...context,
       seenDiscoveryIds: seen,
-      recentTopicIds: localRecent,
+      recentInterestIds: localRecent,
+      explorationBoost,
     });
 
     const next = ranked[0];
@@ -62,8 +58,8 @@ export function buildColdStartFeed(
     selected.push(next.discovery);
     seen.add(next.discovery.id);
     remaining.delete(next.discovery.id);
-    for (const topic of next.discovery.topics) {
-      localRecent.push(topic.topicId);
+    for (const interest of next.discovery.interests) {
+      localRecent.push(interest.interestId);
     }
   }
 
@@ -76,4 +72,12 @@ export function rankBranchTargets(
   limit = 4,
 ): ScoredDiscovery[] {
   return rankDiscoveries(targets, context, { includeSeen: true, limit });
+}
+
+/** Pick the next unseen card given current preferences/session. */
+export function pickNextDiscovery(
+  candidates: readonly Discovery[],
+  context: RankingContext,
+): Discovery | undefined {
+  return rankDiscoveries(candidates, context, { limit: 1 })[0]?.discovery;
 }

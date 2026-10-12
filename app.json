@@ -6,14 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "rabbithole",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.rabbithole.demo"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#F3F0E8",
+        "backgroundColor": "#0B0C0F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -33,7 +33,7 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#F3F0E8"
+          "backgroundColor": "#0B0C0F"
         }
       ]
     ],

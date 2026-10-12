@@ -1,17 +1,30 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { DEMO_DISCOVERIES, getDiscoveryById, listTopicIdsForDiscovery } from '@/src/data/demo';
-import type { Discovery, UserPreferences } from '@/src/domain/types';
-import { buildColdStartFeed } from '@/src/recommendations';
+import {
+  DEMO_DISCOVERIES,
+  getDiscoveryById,
+  listInterestIdsForDiscovery,
+} from '@/src/data/demo';
+import type { Discovery, InterestId, InteractionKind, UserPreferences } from '@/src/domain/types';
+import {
+  applyInteractionSignal,
+  buildColdStartFeed,
+  toggleSelectedInterest,
+} from '@/src/recommendations';
 
 import {
   NEUTRAL_PREFERENCES,
   loadPreferences,
   resetPreferences as clearPrefs,
   savePreferences,
-  setTopicWeight,
 } from './discover/preferenceStore';
-import { EMPTY_SESSION, markSeen, resetSession, type SessionState } from './discover/sessionStore';
+import {
+  EMPTY_SESSION,
+  markSeen,
+  recordSkipStreak,
+  resetSession,
+  type SessionState,
+} from './discover/sessionStore';
 import {
   type BookmarkRecord,
   clearBookmarks,
@@ -28,25 +41,33 @@ type AppStateValue = {
   bookmarks: BookmarkRecord[];
   session: SessionState;
   feed: Discovery[];
-  setTopicPreference: (topicId: Parameters<typeof setTopicWeight>[1], weight: number) => Promise<void>;
+  deckIndex: number;
+  currentDiscovery: Discovery | undefined;
+  toggleInterestSeed: (interestId: InterestId) => Promise<void>;
   resetAllPreferences: () => Promise<void>;
   toggleSave: (discoveryId: string) => Promise<void>;
   clearAllBookmarks: () => Promise<void>;
-  recordView: (discoveryId: string) => void;
+  reactToCard: (discoveryId: string, kind: InteractionKind) => Promise<void>;
   rebuildFeed: () => void;
   resetSessionState: () => void;
   isSaved: (discoveryId: string) => boolean;
   savedDiscoveries: Discovery[];
+  hasOnboardedInterests: boolean;
 };
 
 const AppStateContext = createContext<AppStateValue | null>(null);
 
 function computeFeed(preferences: UserPreferences, session: SessionState): Discovery[] {
-  return buildColdStartFeed(DEMO_DISCOVERIES, {
-    preferences,
-    seenDiscoveryIds: new Set(session.seenDiscoveryIds),
-    recentTopicIds: session.recentTopicIds,
-  }, DEMO_DISCOVERIES.length);
+  return buildColdStartFeed(
+    DEMO_DISCOVERIES,
+    {
+      preferences,
+      seenDiscoveryIds: new Set(session.seenDiscoveryIds),
+      recentInterestIds: session.recentInterestIds,
+      explorationBoost: 0.08,
+    },
+    DEMO_DISCOVERIES.length,
+  );
 }
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
@@ -56,6 +77,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [bookmarks, setBookmarks] = useState<BookmarkRecord[]>([]);
   const [session, setSession] = useState<SessionState>(EMPTY_SESSION);
   const [feed, setFeed] = useState<Discovery[]>([]);
+  const [deckIndex, setDeckIndex] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +88,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         setPreferences(prefs);
         setBookmarks(marks);
         setFeed(computeFeed(prefs, EMPTY_SESSION));
+        setDeckIndex(0);
         setReady(true);
       } catch (e) {
         if (cancelled) return;
@@ -79,7 +102,18 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const advanceAfter = useCallback((discoveryId: string) => {
+    setDeckIndex((idx) => idx + 1);
+    setSession((prev) => {
+      const discovery = getDiscoveryById(discoveryId);
+      if (!discovery) return prev;
+      return markSeen(prev, discoveryId, listInterestIdsForDiscovery(discovery));
+    });
+  }, []);
+
   const value = useMemo<AppStateValue>(() => {
+    const currentDiscovery = feed[deckIndex];
+
     return {
       ready,
       error,
@@ -87,16 +121,23 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       bookmarks,
       session,
       feed,
-      setTopicPreference: async (topicId, weight) => {
-        const next = setTopicWeight(preferences, topicId, weight);
+      deckIndex,
+      currentDiscovery,
+      hasOnboardedInterests: preferences.selectedInterestIds.length > 0,
+      toggleInterestSeed: async (interestId) => {
+        const next = toggleSelectedInterest(preferences, interestId);
         setPreferences(next);
         await savePreferences(next);
-        setFeed(computeFeed(next, session));
+        const rebuilt = computeFeed(next, session);
+        setFeed(rebuilt);
+        setDeckIndex(0);
       },
       resetAllPreferences: async () => {
         await clearPrefs();
         setPreferences(NEUTRAL_PREFERENCES);
-        setFeed(computeFeed(NEUTRAL_PREFERENCES, session));
+        const rebuilt = computeFeed(NEUTRAL_PREFERENCES, session);
+        setFeed(rebuilt);
+        setDeckIndex(0);
       },
       toggleSave: async (discoveryId) => {
         const next = toggleBookmark(bookmarks, discoveryId);
@@ -107,26 +148,63 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         await clearBookmarks();
         setBookmarks([]);
       },
-      recordView: (discoveryId) => {
+      reactToCard: async (discoveryId, kind) => {
         const discovery = getDiscoveryById(discoveryId);
         if (!discovery) return;
-        // Track views for later reshuffles; do not rebuild the in-progress feed under the user.
-        setSession((prev) => markSeen(prev, discoveryId, listTopicIdsForDiscovery(discovery)));
+
+        let nextPrefs = preferences;
+        nextPrefs = applyInteractionSignal(preferences, discovery, kind);
+        setPreferences(nextPrefs);
+        await savePreferences(nextPrefs);
+
+        if (kind === 'save') {
+          const marks = toggleBookmark(bookmarks, discoveryId);
+          if (!isBookmarked(bookmarks, discoveryId)) {
+            setBookmarks(marks);
+            await saveBookmarks(marks);
+          }
+        }
+
+        setSession((prev) =>
+          recordSkipStreak(
+            markSeen(prev, discoveryId, listInterestIdsForDiscovery(discovery)),
+            listInterestIdsForDiscovery(discovery),
+            kind === 'skip',
+          ),
+        );
+
+        if (kind === 'skip' || kind === 'save') {
+          advanceAfter(discoveryId);
+        } else {
+          // Dive / branch: mark seen but stay until navigate; still advance deck for return.
+          setSession((prev) => markSeen(prev, discoveryId, listInterestIdsForDiscovery(discovery)));
+        }
       },
       rebuildFeed: () => {
         setFeed(computeFeed(preferences, session));
+        setDeckIndex(0);
       },
       resetSessionState: () => {
         const next = resetSession();
         setSession(next);
         setFeed(computeFeed(preferences, next));
+        setDeckIndex(0);
       },
       isSaved: (discoveryId) => isBookmarked(bookmarks, discoveryId),
       savedDiscoveries: bookmarks
         .map((b) => getDiscoveryById(b.discoveryId))
         .filter((d): d is Discovery => Boolean(d)),
     };
-  }, [ready, error, preferences, bookmarks, session, feed]);
+  }, [
+    ready,
+    error,
+    preferences,
+    bookmarks,
+    session,
+    feed,
+    deckIndex,
+    advanceAfter,
+  ]);
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }

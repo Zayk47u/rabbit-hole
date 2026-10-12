@@ -1,16 +1,15 @@
 import { useFonts } from 'expo-font';
 import {
   DarkTheme,
-  DefaultTheme,
   Stack,
   ThemeProvider,
 } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
 import { AppStateProvider } from '@/src/features/AppState';
 import { palette } from '@/src/lib/theme';
 
@@ -22,15 +21,16 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 
-const LightTheme = {
-  ...DefaultTheme,
+const AppTheme = {
+  ...DarkTheme,
   colors: {
-    ...DefaultTheme.colors,
-    background: palette.paper,
-    card: palette.white,
+    ...DarkTheme.colors,
+    background: palette.bg,
+    card: palette.bgElevated,
     primary: palette.accent,
-    text: palette.ink,
-    border: palette.paperDeep,
+    text: palette.text,
+    border: palette.border,
+    notification: palette.accent,
   },
 };
 
@@ -54,26 +54,24 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: palette.bg }}>
       <AppStateProvider>
-        <RootLayoutNav />
+        <ThemeProvider value={AppTheme}>
+          <StatusBar style="light" />
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="explore/[id]"
+              options={{
+                title: 'Rabbit hole',
+                headerBackTitle: 'Back',
+                headerStyle: { backgroundColor: palette.bgElevated },
+                headerTintColor: palette.text,
+              }}
+            />
+          </Stack>
+        </ThemeProvider>
       </AppStateProvider>
     </GestureHandlerRootView>
-  );
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : LightTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="explore/[id]"
-          options={{ title: 'Explore', headerBackTitle: 'Back' }}
-        />
-      </Stack>
-    </ThemeProvider>
   );
 }

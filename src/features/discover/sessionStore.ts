@@ -1,25 +1,48 @@
-import type { TopicId } from '@/src/domain/types';
+import type { InterestId } from '@/src/domain/types';
 
 export type SessionState = {
   seenDiscoveryIds: string[];
-  recentTopicIds: TopicId[];
+  recentInterestIds: InterestId[];
+  skipStreakByInterest: Partial<Record<InterestId, number>>;
 };
 
 export const EMPTY_SESSION: SessionState = {
   seenDiscoveryIds: [],
-  recentTopicIds: [],
+  recentInterestIds: [],
+  skipStreakByInterest: {},
 };
 
-export function markSeen(session: SessionState, discoveryId: string, topicIds: TopicId[]): SessionState {
+export function markSeen(
+  session: SessionState,
+  discoveryId: string,
+  interestIds: InterestId[],
+): SessionState {
   if (session.seenDiscoveryIds.includes(discoveryId)) {
     return session;
   }
   return {
+    ...session,
     seenDiscoveryIds: [...session.seenDiscoveryIds, discoveryId],
-    recentTopicIds: [...session.recentTopicIds, ...topicIds].slice(-24),
+    recentInterestIds: [...session.recentInterestIds, ...interestIds].slice(-32),
   };
 }
 
+export function recordSkipStreak(
+  session: SessionState,
+  interestIds: InterestId[],
+  didSkip: boolean,
+): SessionState {
+  const next = { ...session.skipStreakByInterest };
+  for (const id of interestIds) {
+    next[id] = didSkip ? (next[id] ?? 0) + 1 : 0;
+  }
+  return { ...session, skipStreakByInterest: next };
+}
+
 export function resetSession(): SessionState {
-  return { ...EMPTY_SESSION, seenDiscoveryIds: [], recentTopicIds: [] };
+  return {
+    seenDiscoveryIds: [],
+    recentInterestIds: [],
+    skipStreakByInterest: {},
+  };
 }

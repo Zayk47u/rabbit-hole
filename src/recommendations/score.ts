@@ -1,4 +1,10 @@
-import { DEFAULT_WEIGHTS, type Discovery, type RankingContext, type ScoredDiscovery, type TopicId } from '@/src/domain/types';
+import {
+  DEFAULT_WEIGHTS,
+  type Discovery,
+  type InterestId,
+  type RankingContext,
+  type ScoredDiscovery,
+} from '@/src/domain/types';
 
 function clamp01(value: number): number {
   if (Number.isNaN(value)) return 0;
@@ -6,17 +12,26 @@ function clamp01(value: number): number {
 }
 
 export function topicRelevance(discovery: Discovery, context: RankingContext): number {
-  const links = discovery.topics;
+  const links = discovery.interests;
   if (links.length === 0) return 0.5;
 
   let weighted = 0;
   let total = 0;
   for (const link of links) {
-    const preference = context.preferences.topicWeights[link.topicId] ?? 0.5;
+    const preference = context.preferences.interestWeights[link.interestId] ?? 0.5;
     weighted += preference * link.weight;
     total += link.weight;
   }
-  return clamp01(total === 0 ? 0.5 : weighted / total);
+
+  // Mild exploration: boost discoveries that touch adjacent but non-selected interests.
+  const selected = new Set(context.preferences.selectedInterestIds);
+  const hasSelected = links.some((l) => selected.has(l.interestId));
+  const hasAdjacent = links.some((l) => !selected.has(l.interestId));
+  const exploration = context.explorationBoost ?? 0.08;
+  const exploreNudge =
+    selected.size > 0 && !hasSelected && hasAdjacent ? exploration : 0;
+
+  return clamp01((total === 0 ? 0.5 : weighted / total) + exploreNudge);
 }
 
 export function connectionRelevance(discovery: Discovery, context: RankingContext): number {
@@ -28,25 +43,23 @@ export function connectionRelevance(discovery: Discovery, context: RankingContex
   const match = outgoing.find((c) => c.toDiscoveryId === discovery.id);
   if (!match) return 0.15;
 
-  // Prefer branches that share topics with the focus card's recent path.
-  const sharedBoost = discovery.topics.some((t) =>
-    context.recentTopicIds.slice(-3).includes(t.topicId),
+  const sharedBoost = discovery.interests.some((t) =>
+    context.recentInterestIds.slice(-3).includes(t.interestId),
   )
-    ? 0.15
+    ? 0.12
     : 0;
-  return clamp01(0.75 + sharedBoost);
+  return clamp01(0.78 + sharedBoost);
 }
 
 export function noveltyScore(discovery: Discovery, context: RankingContext): number {
   if (context.seenDiscoveryIds.has(discovery.id)) {
     return 0;
   }
-  // Mild penalty if many of the discovery's topics dominate the recent path.
-  const recent = context.recentTopicIds.slice(-6);
+  const recent = context.recentInterestIds.slice(-6);
   if (recent.length === 0) return 1;
 
-  const overlap = discovery.topics.filter((t) => recent.includes(t.topicId)).length;
-  const ratio = overlap / Math.max(discovery.topics.length, 1);
+  const overlap = discovery.interests.filter((t) => recent.includes(t.interestId)).length;
+  const ratio = overlap / Math.max(discovery.interests.length, 1);
   return clamp01(1 - ratio * 0.35);
 }
 
@@ -55,21 +68,21 @@ export function editorialQuality(discovery: Discovery): number {
 }
 
 export function diversityScore(discovery: Discovery, context: RankingContext): number {
-  const recent = context.recentTopicIds.slice(-4);
+  const recent = context.recentInterestIds.slice(-4);
   if (recent.length === 0) return 1;
 
-  const counts = new Map<TopicId, number>();
+  const counts = new Map<InterestId, number>();
   for (const id of recent) {
     counts.set(id, (counts.get(id) ?? 0) + 1);
   }
 
   let penalty = 0;
-  for (const link of discovery.topics) {
-    const count = counts.get(link.topicId) ?? 0;
+  for (const link of discovery.interests) {
+    const count = counts.get(link.interestId) ?? 0;
     if (count >= 2) {
-      penalty += 0.25 * link.weight;
+      penalty += 0.28 * link.weight;
     } else if (count === 1) {
-      penalty += 0.1 * link.weight;
+      penalty += 0.12 * link.weight;
     }
   }
   return clamp01(1 - penalty);

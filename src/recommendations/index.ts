@@ -1,4 +1,4 @@
-export { buildColdStartFeed, rankBranchTargets, rankDiscoveries } from './rank';
+export { buildColdStartFeed, pickNextDiscovery, rankBranchTargets, rankDiscoveries } from './rank';
 export {
   connectionRelevance,
   diversityScore,
@@ -7,3 +7,4 @@ export {
   scoreDiscovery,
   topicRelevance,
 } from './score';
+export { applyInteractionSignal, seedFromSelectedInterests, toggleSelectedInterest } from './signals';

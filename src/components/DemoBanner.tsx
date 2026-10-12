@@ -1,28 +1,29 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { palette, spacing } from '@/src/lib/theme';
+import { palette, radii, spacing } from '@/src/lib/theme';
 
 export function DemoBanner() {
   return (
     <View style={styles.banner} accessibilityRole="text" accessibilityLabel="Demonstration content">
-      <Text style={styles.text}>DEMO CONTENT — not published production material</Text>
+      <Text style={styles.text}>DEMO · UNVERIFIED SAMPLE</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   banner: {
+    alignSelf: 'flex-start',
     backgroundColor: palette.demoSoft,
-    borderBottomWidth: 1,
-    borderBottomColor: palette.demo,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,176,32,0.35)',
   },
   text: {
     color: palette.demo,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.2,
   },
 });
