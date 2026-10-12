@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
+  type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
   type ViewToken,
 } from 'react-native';
@@ -40,9 +40,9 @@ export function DiscoveryFeed({
   onView,
   onRetry,
 }: Props) {
-  const { height } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const listRef = useRef<FlatList<Discovery>>(null);
 
   useEffect(() => {
@@ -66,20 +66,28 @@ export function DiscoveryFeed({
 
   const goTo = useCallback(
     (nextIndex: number) => {
-      if (nextIndex < 0 || nextIndex >= feed.length) return;
+      if (nextIndex < 0 || nextIndex >= feed.length || viewportHeight <= 0) return;
       listRef.current?.scrollToIndex({
         index: nextIndex,
         animated: !reducedMotion,
       });
       setIndex(nextIndex);
     },
-    [feed.length, reducedMotion],
+    [feed.length, reducedMotion, viewportHeight],
   );
 
   const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(e.nativeEvent.contentOffset.y / Math.max(height, 1));
+    if (viewportHeight <= 0) return;
+    const next = Math.round(e.nativeEvent.contentOffset.y / viewportHeight);
     if (next !== index && next >= 0 && next < feed.length) {
       setIndex(next);
+    }
+  };
+
+  const onLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.height);
+    if (next > 0 && next !== viewportHeight) {
+      setViewportHeight(next);
     }
   };
 
@@ -95,30 +103,38 @@ export function DiscoveryFeed({
   }
 
   return (
-    <View style={styles.wrap}>
-      <FlatList
-        ref={listRef}
-        data={feed}
-        keyExtractor={(item) => item.id}
-        pagingEnabled={!reducedMotion}
-        disableIntervalMomentum
-        showsVerticalScrollIndicator={false}
-        onMomentumScrollEnd={onMomentumEnd}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={VIEWABILITY_CONFIG}
-        getItemLayout={(_, i) => ({ length: height, offset: height * i, index: i })}
-        renderItem={({ item }) => (
-          <View style={{ height }}>
-            <DiscoveryCard
-              discovery={item}
-              saved={isSaved(item.id)}
-              onSave={() => onToggleSave(item.id)}
-              onSkip={() => goTo(Math.min(index + 1, feed.length - 1))}
-              reducedMotion={reducedMotion}
-            />
-          </View>
-        )}
-      />
+    <View style={styles.wrap} onLayout={onLayout}>
+      {viewportHeight > 0 ? (
+        <FlatList
+          ref={listRef}
+          data={feed}
+          keyExtractor={(item) => item.id}
+          pagingEnabled={!reducedMotion}
+          disableIntervalMomentum
+          showsVerticalScrollIndicator={false}
+          onMomentumScrollEnd={onMomentumEnd}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={VIEWABILITY_CONFIG}
+          getItemLayout={(_, i) => ({
+            length: viewportHeight,
+            offset: viewportHeight * i,
+            index: i,
+          })}
+          renderItem={({ item }) => (
+            <View style={{ height: viewportHeight }}>
+              <DiscoveryCard
+                discovery={item}
+                saved={isSaved(item.id)}
+                onSave={() => onToggleSave(item.id)}
+                onSkip={() => goTo(Math.min(index + 1, feed.length - 1))}
+                reducedMotion={reducedMotion}
+              />
+            </View>
+          )}
+        />
+      ) : (
+        <LoadingState label="Preparing feed…" />
+      )}
       <View style={styles.progress} accessibilityLiveRegion="polite">
         <Text style={styles.progressText}>
           {index + 1} / {feed.length}

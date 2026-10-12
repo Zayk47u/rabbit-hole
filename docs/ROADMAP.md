@@ -14,8 +14,8 @@
 - [x] Add local save/unsave and saved screen.
 - [x] Add deterministic recommendation module, cold-start diversity and deduplication.
 - [x] Test ranking, navigation, bookmarks, reduced motion, and error states.
-- [ ] Run lint, typecheck, tests and report results.
-- [ ] Open implementation PR.
+- [x] Run lint, typecheck, tests and report results.
+- [x] Open implementation PR.
 
 ## M2 — Content and backend
 - [ ] Create Supabase project after explicit authorization/credentials setup.

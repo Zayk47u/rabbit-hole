@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DemoBanner } from '@/src/components/DemoBanner';
@@ -21,6 +21,7 @@ function minutesLabel(seconds: number): string {
 }
 
 export function DiscoveryCard({ discovery, saved, onSave, onSkip, reducedMotion }: Props) {
+  const router = useRouter();
   const topicLabels = discovery.topics
     .map((t) => DEMO_TOPICS.find((topic) => topic.id === t.topicId)?.label)
     .filter(Boolean)
@@ -30,6 +31,7 @@ export function DiscoveryCard({ discovery, saved, onSave, onSkip, reducedMotion 
     <View style={styles.card} accessibilityLabel={`Discovery: ${discovery.title}`}>
       <DemoBanner />
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         accessible={false}
@@ -55,31 +57,32 @@ export function DiscoveryCard({ discovery, saved, onSave, onSkip, reducedMotion 
 
       <View style={styles.actions}>
         <Pressable
-          onPress={onSkip}
+          onPress={() => router.push(`/explore/${discovery.id}`)}
           accessibilityRole="button"
-          accessibilityLabel="Skip to next discovery"
-          style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+          accessibilityLabel="Explore related discoveries"
+          style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
         >
-          <Text style={styles.secondaryText}>{reducedMotion ? 'Next' : 'Skip'}</Text>
+          <Text style={styles.primaryText}>Explore connections</Text>
         </Pressable>
-        <Pressable
-          onPress={onSave}
-          accessibilityRole="button"
-          accessibilityLabel={saved ? 'Remove bookmark' : 'Save discovery'}
-          accessibilityState={{ selected: saved }}
-          style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
-        >
-          <Text style={styles.secondaryText}>{saved ? 'Saved' : 'Save'}</Text>
-        </Pressable>
-        <Link href={`/explore/${discovery.id}`} asChild>
+        <View style={styles.secondaryRow}>
           <Pressable
+            onPress={onSkip}
             accessibilityRole="button"
-            accessibilityLabel="Explore related discoveries"
-            style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}
+            accessibilityLabel="Skip to next discovery"
+            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
           >
-            <Text style={styles.primaryText}>Explore</Text>
+            <Text style={styles.secondaryText}>{reducedMotion ? 'Next' : 'Skip'}</Text>
           </Pressable>
-        </Link>
+          <Pressable
+            onPress={onSave}
+            accessibilityRole="button"
+            accessibilityLabel={saved ? 'Remove bookmark' : 'Save discovery'}
+            accessibilityState={{ selected: saved }}
+            style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}
+          >
+            <Text style={styles.secondaryText}>{saved ? 'Saved' : 'Save'}</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -90,9 +93,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.paper,
   },
+  scroll: {
+    flex: 1,
+  },
   content: {
     padding: spacing.md,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.md,
     gap: spacing.sm,
   },
   kicker: {
@@ -136,12 +142,15 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   actions: {
-    flexDirection: 'row',
     gap: spacing.sm,
     padding: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: palette.paperDeep,
     backgroundColor: palette.white,
+  },
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
   secondaryBtn: {
     flex: 1,
@@ -157,7 +166,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   primaryBtn: {
-    flex: 1.2,
+    width: '100%',
     minHeight: 48,
     borderRadius: 10,
     backgroundColor: palette.accent,

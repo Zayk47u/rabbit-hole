@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DemoBanner } from '@/src/components/DemoBanner';
@@ -8,6 +8,7 @@ import { useAppState } from '@/src/features/AppState';
 import { palette, spacing } from '@/src/lib/theme';
 
 export default function SavedScreen() {
+  const router = useRouter();
   const { ready, savedDiscoveries, toggleSave, clearAllBookmarks } = useAppState();
 
   if (!ready) return <LoadingState label="Loading saved discoveries…" />;
@@ -43,15 +44,14 @@ export default function SavedScreen() {
             <Text style={styles.title}>{discovery.title}</Text>
             <Text style={styles.hook}>{discovery.hook}</Text>
             <View style={styles.row}>
-              <Link href={`/explore/${discovery.id}`} asChild>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Explore ${discovery.title}`}
-                  style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
-                >
-                  <Text style={styles.primaryText}>Open</Text>
-                </Pressable>
-              </Link>
+              <Pressable
+                onPress={() => router.push(`/explore/${discovery.id}`)}
+                accessibilityRole="button"
+                accessibilityLabel={`Explore ${discovery.title}`}
+                style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+              >
+                <Text style={styles.primaryText}>Open</Text>
+              </Pressable>
               <Pressable
                 onPress={() => {
                   void toggleSave(discovery.id);
