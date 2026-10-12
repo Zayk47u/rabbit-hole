@@ -1,15 +1,25 @@
-import type { InterestId } from '@/src/domain/types';
+import type { ExplorationBucket, InterestId, ScoredDiscovery } from '@/src/domain/types';
 
 export type SessionState = {
   seenDiscoveryIds: string[];
   recentInterestIds: InterestId[];
   skipStreakByInterest: Partial<Record<InterestId, number>>;
+  /** How many Discover picks have been served this session (drives exploration mix). */
+  pickCount: number;
+  lastBucket: ExplorationBucket | null;
+  lastExplanation: ScoredDiscovery | null;
+  /** Timestamp when the current card was shown (for quick-abandon). */
+  cardShownAtMs: number | null;
 };
 
 export const EMPTY_SESSION: SessionState = {
   seenDiscoveryIds: [],
   recentInterestIds: [],
   skipStreakByInterest: {},
+  pickCount: 0,
+  lastBucket: null,
+  lastExplanation: null,
+  cardShownAtMs: null,
 };
 
 export function markSeen(
@@ -39,10 +49,24 @@ export function recordSkipStreak(
   return { ...session, skipStreakByInterest: next };
 }
 
+export function noteCardShown(session: SessionState, scored: ScoredDiscovery, nowMs: number): SessionState {
+  return {
+    ...session,
+    lastBucket: scored.bucket,
+    lastExplanation: scored,
+    cardShownAtMs: nowMs,
+    pickCount: session.pickCount + 1,
+  };
+}
+
 export function resetSession(): SessionState {
   return {
     seenDiscoveryIds: [],
     recentInterestIds: [],
     skipStreakByInterest: {},
+    pickCount: 0,
+    lastBucket: null,
+    lastExplanation: null,
+    cardShownAtMs: null,
   };
 }

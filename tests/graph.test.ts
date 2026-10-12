@@ -7,9 +7,8 @@ import {
 } from '../src/data/demo';
 
 describe('discovery graph', () => {
-  it('has 12–20 demo discoveries', () => {
-    expect(DEMO_DISCOVERIES.length).toBeGreaterThanOrEqual(12);
-    expect(DEMO_DISCOVERIES.length).toBeLessThanOrEqual(20);
+  it('has at least 60 demo discoveries', () => {
+    expect(DEMO_DISCOVERIES.length).toBeGreaterThanOrEqual(60);
     expect(DEMO_DISCOVERIES.every((d) => d.isDemo === true)).toBe(true);
   });
 
@@ -35,7 +34,7 @@ describe('discovery graph', () => {
   it('provides 2–4 outgoing branches for most discoveries', () => {
     const counts = DEMO_DISCOVERIES.map((d) => getConnectionsFrom(d.id).length);
     const withBranches = counts.filter((c) => c >= 2 && c <= 4);
-    expect(withBranches.length).toBeGreaterThanOrEqual(15);
+    expect(withBranches.length).toBeGreaterThanOrEqual(50);
   });
 
   it('detects loops when revisiting history', () => {

@@ -1,7 +1,9 @@
 import type { DiscoveryConnection } from '@/src/domain/types';
 
+import { DEMO_CONNECTIONS_PART2 } from './connectionsPart2';
+
 /** Tempting branches — teasers first, academic labels never. */
-export const DEMO_CONNECTIONS: DiscoveryConnection[] = [
+const DEMO_CONNECTIONS_PART1: DiscoveryConnection[] = [
   // d01 Acoustic Kitty
   {
     id: 'c01',
@@ -482,4 +484,9 @@ export const DEMO_CONNECTIONS: DiscoveryConnection[] = [
     branchType: 'where_this_leads',
     teaser: 'When pop-psych labels start explaining (and judging) survival',
   },
+];
+
+export const DEMO_CONNECTIONS: DiscoveryConnection[] = [
+  ...DEMO_CONNECTIONS_PART1,
+  ...DEMO_CONNECTIONS_PART2,
 ];

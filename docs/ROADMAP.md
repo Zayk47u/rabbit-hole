@@ -17,6 +17,14 @@
 - [x] Run lint, typecheck, tests and report results (`npm run check`: 15 tests passed).
 - [x] Open implementation PR (#5).
 
+## M1.5 — Adaptive local personalization (in progress on `feat/expo-mvp`)
+- [x] Expand demo catalog to 60 discoveries with dense branch graph (still DEMO / UNVERIFIED).
+- [x] Local evolving interest + connection-style profile from Skip/Save/Dive/Branch.
+- [x] Configurable exploration mix (~70% exploit / 20% adjacent / 10% wildcard).
+- [x] Session-adaptive next-card picking + AsyncStorage persistence + Reset personalization.
+- [x] DEV ranking debug screen (`/debug/ranking`).
+- [x] Automated tests for profile updates, exploration, persistence, determinism.
+
 ## M2 — Content and backend
 - [ ] Create Supabase project after explicit authorization/credentials setup.
 - [ ] Implement SQL migrations and RLS tests.

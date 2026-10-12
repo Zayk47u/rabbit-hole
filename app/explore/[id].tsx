@@ -153,7 +153,10 @@ export default function ExploreScreen() {
         <BranchList
           options={options}
           onSelect={(option) => {
-            void reactToCard(option.discovery.id, 'branch');
+            void reactToCard(option.discovery.id, 'branch', {
+              branchType: option.connection.branchType,
+              fromDiscoveryId: discovery.id,
+            });
             setHistory((h) => pushStep(h, option.discovery.id, option.connection.id));
           }}
         />

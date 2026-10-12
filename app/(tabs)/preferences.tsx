@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { DemoBanner } from '@/src/components/DemoBanner';
@@ -29,6 +30,7 @@ const Featured = DEMO_INTERESTS.filter((i) =>
 );
 
 export default function PreferencesScreen() {
+  const router = useRouter();
   const {
     ready,
     preferences,
@@ -41,6 +43,7 @@ export default function PreferencesScreen() {
   if (!ready) return <LoadingState label="Loading interests…" />;
 
   const selected = new Set(preferences.selectedInterestIds);
+  const learnedCount = Object.keys(preferences.interestWeights).length;
 
   return (
     <View style={styles.container}>
@@ -49,9 +52,12 @@ export default function PreferencesScreen() {
         <Text style={styles.heading}>Pick anything that sounds interesting</Text>
         <Text style={styles.sub}>
           Tap fast. This is only your cold start — Skip, Save, Dive, and Branch teach the rest.
+          The feed adapts in-session from your behavior.
         </Text>
         <Text style={styles.count}>
           {selected.size === 0 ? 'Nothing selected yet' : `${selected.size} selected`}
+          {' · '}
+          {learnedCount} learned weights · {preferences.seenDiscoveryIds.length} seen
         </Text>
 
         <View style={styles.grid}>
@@ -69,24 +75,36 @@ export default function PreferencesScreen() {
 
         <View style={styles.actions}>
           <Pressable
+            onPress={resetSessionState}
+            accessibilityRole="button"
+            accessibilityLabel="Reshuffle deck for this session"
+            style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+          >
+            <Text style={styles.primaryText}>
+              Reshuffle deck ({session.seenDiscoveryIds.length} seen this session)
+            </Text>
+          </Pressable>
+          <Pressable
             onPress={() => {
               void resetAllPreferences();
             }}
             accessibilityRole="button"
-            accessibilityLabel="Reset interest seeds"
-            style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
+            accessibilityLabel="Reset all personalization"
+            style={({ pressed }) => [styles.danger, pressed && styles.pressed]}
           >
-            <Text style={styles.secondaryText}>Clear seeds</Text>
+            <Text style={styles.dangerText}>Reset personalization</Text>
           </Pressable>
+          <Text style={styles.hint}>
+            Reset clears learned interest weights, connection-style preferences, skip history, and
+            seen cards. Saved bookmarks stay.
+          </Text>
           <Pressable
-            onPress={resetSessionState}
+            onPress={() => router.push('/debug/ranking')}
             accessibilityRole="button"
-            accessibilityLabel="Reset session and reshuffle deck"
-            style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+            accessibilityLabel="Open developer ranking debug"
+            style={({ pressed }) => [styles.dev, pressed && styles.pressed]}
           >
-            <Text style={styles.primaryText}>
-              Reshuffle deck ({session.seenDiscoveryIds.length} seen)
-            </Text>
+            <Text style={styles.devText}>DEV · Ranking debug</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -108,16 +126,6 @@ const styles = StyleSheet.create({
   count: { color: palette.accent, fontWeight: '800', fontSize: 13, letterSpacing: 0.4 },
   grid: { gap: spacing.sm },
   actions: { gap: spacing.sm, marginTop: spacing.md },
-  secondary: {
-    minHeight: 48,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: palette.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.surface,
-  },
-  secondaryText: { fontWeight: '800', color: palette.text },
   primary: {
     minHeight: 48,
     borderRadius: radii.sm,
@@ -127,5 +135,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   primaryText: { fontWeight: '900', color: palette.white, textAlign: 'center' },
+  danger: {
+    minHeight: 48,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: palette.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surface,
+  },
+  dangerText: { fontWeight: '800', color: palette.warning },
+  hint: { color: palette.textDim, fontSize: 12, lineHeight: 18 },
+  dev: {
+    minHeight: 44,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  devText: { fontWeight: '800', color: palette.textDim, fontSize: 12, letterSpacing: 0.6 },
   pressed: { opacity: 0.88 },
 });

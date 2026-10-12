@@ -1,5 +1,7 @@
 import type { Discovery } from '@/src/domain/types';
 
+import { DEMO_DISCOVERIES_PART2 } from './discoveriesPart2';
+
 const demo = (id: string, title: string): Discovery['sources'][number] => ({
   id,
   title,
@@ -7,10 +9,10 @@ const demo = (id: string, title: string): Discovery['sources'][number] => ({
 });
 
 /**
- * 20 curiosity-engine demonstration cards.
+ * Curiosity-engine demonstration cards (60+).
  * Explicitly non-production. Do not treat as sourced factual reporting.
  */
-export const DEMO_DISCOVERIES: Discovery[] = [
+const DEMO_DISCOVERIES_PART1: Discovery[] = [
   {
     id: 'd01',
     slug: 'operation-acoustic-kitty',
@@ -391,4 +393,9 @@ export const DEMO_DISCOVERIES: Discovery[] = [
     visualMotif: 'ECHO BRAIN',
     isDemo: true,
   },
+];
+
+export const DEMO_DISCOVERIES: Discovery[] = [
+  ...DEMO_DISCOVERIES_PART1,
+  ...DEMO_DISCOVERIES_PART2,
 ];

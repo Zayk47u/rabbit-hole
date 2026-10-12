@@ -69,6 +69,15 @@ export default function RootLayout() {
                 headerTintColor: palette.text,
               }}
             />
+            <Stack.Screen
+              name="debug/ranking"
+              options={{
+                title: 'DEV · Ranking',
+                headerBackTitle: 'Back',
+                headerStyle: { backgroundColor: palette.bgElevated },
+                headerTintColor: palette.warning,
+              }}
+            />
           </Stack>
         </ThemeProvider>
       </AppStateProvider>

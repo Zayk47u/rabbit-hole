@@ -91,6 +91,13 @@ export interface DiscoveryConnection {
 
 export type InteractionKind = 'skip' | 'save' | 'dive' | 'branch';
 
+/** Exploration / exploitation assignment for a Discover pick. */
+export type ExplorationBucket = 'exploit' | 'adjacent' | 'wildcard';
+
+/**
+ * Local evolving user-interest profile.
+ * Explicit Interests selections are cold-start seeds only; behavior updates weights.
+ */
 export interface UserPreferences {
   /**
    * Learned + explicit interest weights in [0, 1].
@@ -99,6 +106,28 @@ export interface UserPreferences {
   interestWeights: Partial<Record<InterestId, number>>;
   /** Explicitly tapped cold-start seeds. */
   selectedInterestIds: InterestId[];
+  /** Learned preference for rabbit-hole transition styles. */
+  branchTypeWeights: Partial<Record<BranchType, number>>;
+  /** Lifetime skip counts per interest (escalating negatives). */
+  skipCountsByInterest: Partial<Record<InterestId, number>>;
+  /** Lifetime positive engagements (save/dive/branch) per interest. */
+  engageCountsByInterest: Partial<Record<InterestId, number>>;
+  /** Long-term seen history (persisted across sessions). */
+  seenDiscoveryIds: string[];
+  /** Quick-abandon counts keyed by discovery id (short dwell skips). */
+  quickAbandonByDiscovery: Partial<Record<string, number>>;
+  profileVersion: 3;
+}
+
+export interface InteractionEvent {
+  kind: InteractionKind;
+  discoveryId: string;
+  /** Present when following a branch. */
+  branchType?: BranchType;
+  /** Source card when following a branch (both sides get signal). */
+  fromDiscoveryId?: string;
+  /** Dwell time on the card before the action, if measured. */
+  dwellMs?: number;
 }
 
 export interface RankingContext {
@@ -107,37 +136,31 @@ export interface RankingContext {
   recentInterestIds: readonly InterestId[];
   focusDiscoveryId?: string;
   outgoingConnections?: readonly DiscoveryConnection[];
-  /** Mild exploration bias: occasionally surface adjacent/unexpected interests. */
+  /** Override bucket for scoring (set by feed builder). */
+  bucket?: ExplorationBucket;
+  /** Mild exploration nudge used by legacy callers. */
   explorationBoost?: number;
+  /** Session skip streaks for repetition penalty. */
+  skipStreakByInterest?: Partial<Record<InterestId, number>>;
+}
+
+export interface ScoreFactors {
+  topicRelevance: number;
+  connectionRelevance: number;
+  connectionStyle: number;
+  novelty: number;
+  editorialQuality: number;
+  diversity: number;
+  repetitionPenalty: number;
 }
 
 export interface ScoredDiscovery {
   discovery: Discovery;
   score: number;
-  factors: {
-    topicRelevance: number;
-    connectionRelevance: number;
-    novelty: number;
-    editorialQuality: number;
-    diversity: number;
-  };
+  factors: ScoreFactors;
+  bucket: ExplorationBucket;
+  reasons: string[];
 }
-
-export const DEFAULT_WEIGHTS = {
-  topicRelevance: 0.3,
-  connectionRelevance: 0.2,
-  novelty: 0.2,
-  editorialQuality: 0.15,
-  diversity: 0.15,
-} as const;
-
-/** Preference deltas applied after each interaction (clamped later). */
-export const SIGNAL_DELTAS: Record<InteractionKind, number> = {
-  skip: -0.08,
-  save: 0.18,
-  dive: 0.22,
-  branch: 0.2,
-};
 
 export const BRANCH_LABELS: Record<BranchType, string> = {
   same_pattern: 'Same pattern',
@@ -150,6 +173,23 @@ export const BRANCH_LABELS: Record<BranchType, string> = {
   where_this_leads: 'Where this leads',
   backstory: 'Backstory',
   modern_version: 'Modern version',
+};
+
+/** @deprecated Prefer SCORE_WEIGHTS from recommendations/config. */
+export const DEFAULT_WEIGHTS = {
+  topicRelevance: 0.32,
+  connectionRelevance: 0.1,
+  novelty: 0.16,
+  editorialQuality: 0.1,
+  diversity: 0.1,
+} as const;
+
+/** @deprecated Prefer INTERACTION_WEIGHTS from recommendations/config. */
+export const SIGNAL_DELTAS: Record<InteractionKind, number> = {
+  skip: -0.07,
+  save: 0.17,
+  dive: 0.24,
+  branch: 0.16,
 };
 
 /** @deprecated Use Interest / InterestId — kept only for migration clarity in comments. */

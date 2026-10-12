@@ -2,13 +2,15 @@ import { DEMO_DISCOVERIES } from '../src/data/demo/discoveries';
 import { DEMO_CONNECTIONS } from '../src/data/demo/connections';
 import {
   applyInteractionSignal,
+  buildAdaptiveFeed,
   buildColdStartFeed,
   rankDiscoveries,
   scoreDiscovery,
 } from '../src/recommendations';
 import type { RankingContext, UserPreferences } from '../src/domain/types';
+import { NEUTRAL_PREFERENCES } from '../src/features/discover/preferenceStore';
 
-const neutral: UserPreferences = { interestWeights: {}, selectedInterestIds: [] };
+const neutral: UserPreferences = { ...NEUTRAL_PREFERENCES };
 
 function baseContext(overrides: Partial<RankingContext> = {}): RankingContext {
   return {
@@ -24,6 +26,7 @@ describe('deterministic recommendation scoring', () => {
     const discovery = DEMO_DISCOVERIES[0]!;
     const ctx = baseContext({
       preferences: {
+        ...neutral,
         selectedInterestIds: ['hidden_history'],
         interestWeights: { hidden_history: 0.9, strange_science: 0.8 },
       },
@@ -53,6 +56,7 @@ describe('deterministic recommendation scoring', () => {
 
     const preferNet = baseContext({
       preferences: {
+        ...neutral,
         selectedInterestIds: ['internet_mysteries'],
         interestWeights: { internet_mysteries: 1, fashion_lore: 0.1 },
       },
@@ -69,9 +73,16 @@ describe('deterministic recommendation scoring', () => {
     expect(feed.length).toBe(12);
   });
 
+  it('builds an adaptive feed with explanation metadata', () => {
+    const feed = buildAdaptiveFeed(DEMO_DISCOVERIES, baseContext(), 10);
+    expect(feed[0]?.reasons.length).toBeGreaterThan(0);
+    expect(feed[0]?.bucket).toBeDefined();
+  });
+
   it('ranks the same candidate list stably across calls', () => {
     const ctx = baseContext({
       preferences: {
+        ...neutral,
         selectedInterestIds: ['cults_belief'],
         interestWeights: { cults_belief: 0.9, power_manipulation: 0.8 },
       },

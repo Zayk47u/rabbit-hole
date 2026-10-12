@@ -27,17 +27,25 @@ export function DiscoveryDeck() {
     ready,
     error,
     currentDiscovery,
+    currentScored,
     feed,
     deckIndex,
     isSaved,
     reactToCard,
     rebuildFeed,
+    markCardVisible,
   } = useAppState();
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     getPrefersReducedMotion().then(setReducedMotion);
   }, []);
+
+  useEffect(() => {
+    if (currentDiscovery) {
+      markCardVisible();
+    }
+  }, [currentDiscovery, markCardVisible]);
 
   if (!ready) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={rebuildFeed} />;
@@ -55,7 +63,8 @@ export function DiscoveryDeck() {
     <View style={styles.wrap}>
       <View style={styles.progress}>
         <Text style={styles.progressText}>
-          {deckIndex + 1} / {feed.length}
+          {deckIndex + 1} / {Math.max(feed.length, deckIndex + 1)}
+          {currentScored ? ` · ${currentScored.bucket}` : ''}
         </Text>
       </View>
       <DiscoveryCard
